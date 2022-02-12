@@ -51,6 +51,10 @@ check-merge-request:
 
 .build-template: &build
   stage: build
+  before_script:
+    - git clone --depth=1 https://gitlab.gnome.org/GNOME/libsoup.git && pushd libsoup
+    - meson _build --prefix=/usr -Dtls_check=false -Dgtk_doc=false
+    - ninja -C _build install
   script:
       - meson . build --prefix=/usr -Db_coverage=true 
       - ninja -C build
@@ -61,7 +65,7 @@ check-merge-request:
 
 .gssdp.fedora@common:
   variables:
-    BASE_TAG: '2021-06-19.0'
+    BASE_TAG: '2022-02-12.0'
     FDO_UPSTREAM_REPO: GNOME/gssdp
     FDO_DISTRIBUTION_PACKAGES: 'clang clang-analyzer gcovr git libasan libubsan python3-gobject python3-pip xmlto gtk4-devel'
     FDO_DISTRIBUTION_EXEC: |
@@ -70,16 +74,16 @@ check-merge-request:
       dnf clean all &&
       pip3 install meson markdown toml typogrify
 
-.gssdp.fedora:34@x86_64:
+.gssdp.fedora:35@x86_64:
   extends: .gssdp.fedora@common
   variables:
-    FDO_DISTRIBUTION_VERSION: 34
+    FDO_DISTRIBUTION_VERSION: 35
     FDO_DISTRIBUTION_TAG: "x86_64-${BASE_TAG}"
 
 build-fedora-container@x86_64:
   extends:
     - .fdo.container-build@fedora
-    - .gssdp.fedora:34@x86_64
+    - .gssdp.fedora:35@x86_64
   stage: prepare
   variables:
     GIT_STRATEGY: none
@@ -88,7 +92,7 @@ build-fedora-container@x86_64:
 build-fedora@x86_64:
     extends:
         - .fdo.distribution-image@fedora
-        - .gssdp.fedora:34@x86_64
+        - .gssdp.fedora:35@x86_64
     needs:
         - build-fedora-container@x86_64
     <<: *build
@@ -130,7 +134,7 @@ build-fedora@x86_64:
 test-fedora@x86_64:
   extends:
     - .fdo.distribution-image@fedora
-    - .gssdp.fedora:34@x86_64
+    - .gssdp.fedora:35@x86_64
   needs:
     - build-fedora@x86_64
   <<: *test
@@ -146,7 +150,7 @@ trigger-gupnp:
 coverage-analysis:
   extends:
     - .fdo.distribution-image@fedora
-    - .gssdp.fedora:34@x86_64
+    - .gssdp.fedora:35@x86_64
   stage: analysis
   allow_failure: true
   script:
@@ -164,7 +168,7 @@ coverage-analysis:
 static-scan:
   extends:
     - .fdo.distribution-image@fedora
-    - .gssdp.fedora:34@x86_64
+    - .gssdp.fedora:35@x86_64
   stage: analysis
   needs:
     - build-fedora-container@x86_64
@@ -184,7 +188,7 @@ static-scan:
 pages:
   extends:
     - .fdo.distribution-image@fedora
-    - .gssdp.fedora:34@x86_64
+    - .gssdp.fedora:35@x86_64
   stage: website
   script:
       - meson doc-build -Dgtk_doc=true
