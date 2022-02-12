@@ -65,14 +65,15 @@ check-merge-request:
 
 .gssdp.fedora@common:
   variables:
-    BASE_TAG: '2022-02-12.0'
+    BASE_TAG: '2022-02-12.1'
     FDO_UPSTREAM_REPO: GNOME/gssdp
     FDO_DISTRIBUTION_PACKAGES: 'clang clang-analyzer gcovr git libasan libubsan python3-gobject python3-pip xmlto gtk4-devel'
     FDO_DISTRIBUTION_EXEC: |
       dnf install -y 'dnf-command(builddep)' &&
       dnf builddep -y gssdp --setopt=install_weak_deps=False &&
+      dnf install -y libnghttp2-devel libpsl-devel sqlite-devel &&
       dnf clean all &&
-      pip3 install meson markdown toml typogrify
+      pip3 install meson markdown gi-docgen jinja2 Markdown markupsafe pygments toml typogrify
 
 .gssdp.fedora:35@x86_64:
   extends: .gssdp.fedora@common
