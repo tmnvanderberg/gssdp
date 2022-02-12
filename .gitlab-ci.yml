@@ -55,6 +55,7 @@ check-merge-request:
     - git clone --depth=1 https://gitlab.gnome.org/GNOME/libsoup.git && pushd libsoup
     - meson _build --prefix=/usr -Dtls_check=false -Dgtk_doc=false
     - ninja -C _build install
+    - popd
   script:
       - meson . build --prefix=/usr -Db_coverage=true 
       - ninja -C build
