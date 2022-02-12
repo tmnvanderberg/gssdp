@@ -52,6 +52,10 @@ check-merge-request:
 .build-template: &build
   stage: build
   script:
+      - git clone --depth=1 https://gitlab.gnome.org/GNOME/libsoup.git && pushd libsoup
+      - meson _build --prefix=/usr -Dtls_check=false -Dgtk_doc=false
+      - ninja -C _build install
+      - popd
       - meson . build --prefix=/usr -Db_coverage=true 
       - ninja -C build
   artifacts:
@@ -61,7 +65,7 @@ check-merge-request:
 
 .gssdp.fedora@common:
   variables:
-    BASE_TAG: '2022-02-12.1'
+    BASE_TAG: '2022-02-12.2'
     FDO_UPSTREAM_REPO: GNOME/gssdp
     FDO_DISTRIBUTION_PACKAGES: 'clang clang-analyzer gcovr git libasan libubsan python3-gobject python3-pip xmlto gtk4-devel'
     FDO_DISTRIBUTION_EXEC: |
@@ -71,16 +75,19 @@ check-merge-request:
       dnf clean all &&
       pip3 install meson markdown gi-docgen jinja2 Markdown markupsafe pygments toml typogrify
 
-.gssdp.fedora:35@x86_64:
-  extends: .gssdp.fedora@common
-  variables:
-    FDO_DISTRIBUTION_VERSION: 35
-    FDO_DISTRIBUTION_TAG: "x86_64-${BASE_TAG}"
+.soup3:
   before_script:
     - git clone --depth=1 https://gitlab.gnome.org/GNOME/libsoup.git && pushd libsoup
     - meson _build --prefix=/usr -Dtls_check=false -Dgtk_doc=false
     - ninja -C _build install
     - popd
+
+.gssdp.fedora:35@x86_64:
+  extends:
+    - .gssdp.fedora@common
+  variables:
+    FDO_DISTRIBUTION_VERSION: 35
+    FDO_DISTRIBUTION_TAG: "x86_64-${BASE_TAG}"
 
 build-fedora-container@x86_64:
   extends:
@@ -137,6 +144,7 @@ test-fedora@x86_64:
   extends:
     - .fdo.distribution-image@fedora
     - .gssdp.fedora:35@x86_64
+    - .soup3
   needs:
     - build-fedora@x86_64
   <<: *test
@@ -171,6 +179,7 @@ static-scan:
   extends:
     - .fdo.distribution-image@fedora
     - .gssdp.fedora:35@x86_64
+    - .soup3
   stage: analysis
   needs:
     - build-fedora-container@x86_64
@@ -191,6 +200,7 @@ pages:
   extends:
     - .fdo.distribution-image@fedora
     - .gssdp.fedora:35@x86_64
+    - .soup3
   stage: website
   script:
       - meson doc-build -Dgtk_doc=true
